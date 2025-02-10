@@ -2,30 +2,50 @@
 
 Processing strike.gml...
 Applying Louvain to strike.gml...
-Louvain on strike.gml: {'modularity': 0.5619806094182824}
+Louvain on strike.gml:
+  - Modularity: 0.5620
+  - Conductance: 0.1476
 Applying Spectral Clustering to strike.gml with 4 clusters...
-Spectral Clustering on strike.gml: {'modularity': 0.5557479224376731}
+Spectral Clustering on strike.gml:
+  - Modularity: 0.5557
+  - Conductance: 0.1499
 
 Processing karate.gml...
 Applying Louvain to karate.gml...
-Louvain on karate.gml: {'modularity': 0.3952169625246548}
+Louvain on karate.gml:
+  - Modularity: 0.4198
+  - Conductance: 0.2875
 Applying Spectral Clustering to karate.gml with 4 clusters...
-Spectral Clustering on karate.gml: {'modularity': 0.4101742274819198}
+Spectral Clustering on karate.gml:
+  - Modularity: 0.4102
+  - Conductance: 0.2917
 
 Processing polblogs.gml...
 Applying Louvain to polblogs.gml...
-Louvain on polblogs.gml: {'modularity': 0.42716069450463906}
+Louvain on polblogs.gml:
+  - Modularity: 0.4268
+  - Conductance: 0.9740
 Applying Spectral Clustering to polblogs.gml with 277 clusters...
-Spectral Clustering on polblogs.gml: {'modularity': 0.04208524985655358}
+Spectral Clustering on polblogs.gml:
+  - Modularity: 0.0421
+  - Conductance: 0.9304
 
 Processing polbooks.gml...
 Applying Louvain to polbooks.gml...
-Louvain on polbooks.gml: {'modularity': 0.5265681480453104}
-Applying Spectral Clustering to polbooks.gml with 4 clusters...
-Spectral Clustering on polbooks.gml: {'modularity': 0.5222181087098482}
+Louvain on polbooks.gml:
+  - Modularity: 0.5270
+  - Conductance: 0.2760
+Applying Spectral Clustering to polbooks.gml with 5 clusters...
+Spectral Clustering on polbooks.gml:
+  - Modularity: 0.5183
+  - Conductance: 0.2420
 
 Processing football.gml...
 Applying Louvain to football.gml...
-Louvain on football.gml: {'modularity': 0.6045695626834571}
+Louvain on football.gml:
+  - Modularity: 0.5978
+  - Conductance: 0.3071
 Applying Spectral Clustering to football.gml with 10 clusters...
-Spectral Clustering on football.gml: {'modularity': 0.5984873685695201}
+Spectral Clustering on football.gml:
+  - Modularity: 0.5985
+  - Conductance: 0.3066

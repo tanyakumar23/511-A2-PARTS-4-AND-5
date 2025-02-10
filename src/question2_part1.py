@@ -64,9 +64,45 @@ def load_graph_classic(filename):
         raise ValueError(f"Empty graph loaded from {filename}")
     return G
 
+def calculate_conductance(graph, community):
+    """
+    Calculate conductance for a single community.
+    Conductance is the ratio of external edges to total edges (internal + external).
+    Lower conductance means better community structure.
+    """
+    internal_edges = 0
+    external_edges = 0
+    
+    for node in community:
+        for neighbor in graph.neighbors(node):
+            if neighbor in community:
+                internal_edges += 1
+            else:
+                external_edges += 1
+    
+    # Divide by 2 since we counted each internal edge twice
+    internal_edges = internal_edges / 2
+    
+    if internal_edges + external_edges == 0:
+        return 1.0  # Worst conductance for isolated communities
+        
+    return external_edges / (2 * internal_edges + external_edges)
+
 def evaluate_topology(graph, communities):
+    """
+    Evaluate community structure using modularity and conductance.
+    Returns both modularity and average conductance across all communities.
+    """
     modularity = nx.algorithms.community.modularity(graph, communities)
-    return {"modularity": modularity}
+    
+    # Calculate conductance for each community
+    conductances = [calculate_conductance(graph, community) for community in communities]
+    avg_conductance = sum(conductances) / len(conductances) if conductances else 1.0
+    
+    return {
+        "modularity": modularity,
+        "conductance": avg_conductance  # Lower is better
+    }
 
 def group_nodes_by_partition(partition):
     """Group nodes by their community ID."""
@@ -126,22 +162,26 @@ for graph_file in classic_graphs:
         graph_path = os.path.join(DATASET_DIR, graph_file)
         graph = load_graph_classic(graph_path)
 
-        # Louvain community detection on the full graph.
+        # Louvain community detection on the full graph
         print(f"Applying Louvain to {graph_file}...")
         louvain_partition = apply_louvain(graph)
         plot_graph(graph, louvain_partition, f"{graph_file}_louvain.png")
         communities = group_nodes_by_partition(louvain_partition)
         topology_eval = evaluate_topology(graph, communities)
-        print(f"Louvain on {graph_file}: {topology_eval}")
+        print(f"Louvain on {graph_file}:")
+        print(f"  - Modularity: {topology_eval['modularity']:.4f}")
+        print(f"  - Conductance: {topology_eval['conductance']:.4f}")
         
-        # Use the number of communities from Louvain for spectral clustering.
+        # Spectral clustering
         n_clusters = len(set(louvain_partition.values()))
         print(f"Applying Spectral Clustering to {graph_file} with {n_clusters} clusters...")
         spectral_partition, spectral_graph = apply_spectral_clustering(graph, n_clusters)
         plot_graph(spectral_graph, spectral_partition, f"{graph_file}_spectral.png")
         spectral_communities = group_nodes_by_partition(spectral_partition)
         spectral_eval = evaluate_topology(spectral_graph, spectral_communities)
-        print(f"Spectral Clustering on {graph_file}: {spectral_eval}")
+        print(f"Spectral Clustering on {graph_file}:")
+        print(f"  - Modularity: {spectral_eval['modularity']:.4f}")
+        print(f"  - Conductance: {spectral_eval['conductance']:.4f}")
         
     except Exception as e:
         print(f"Error processing {graph_file}: {str(e)}")
