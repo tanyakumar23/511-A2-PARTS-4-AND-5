@@ -5,6 +5,7 @@ from sklearn.cluster import SpectralClustering
 import networkx.algorithms.community as nx_community
 import time
 import pickle
+import matplotlib.pyplot as plt
 
 
 def load_citation_network(network_path, directed=False):
@@ -22,15 +23,15 @@ def load_citation_network(network_path, directed=False):
     G = nx.DiGraph() if directed else nx.Graph()
 
     try:
-        # Different parsing for different file types
+        # Different parsing for the different file types
         if network_path.endswith('.cites') or network_path.endswith('.tab'):
             with open(network_path, 'r') as f:
                 for line in f:
-                    # Skip comments and headers
+                    # Skip comments
                     if line.startswith('#') or line.strip() == '':
                         continue
 
-                    # Split line and add edge
+                    # Split line and add edges
                     parts = line.strip().split()
                     if len(parts) >= 2:
                         source, target = parts[0], parts[1]
@@ -120,15 +121,13 @@ class ECGClustering:
         Returns:
         - Cluster labels for each node
         """
-        # Ensure input is numpy array
         adjacency_matrix = np.array(adjacency_matrix)
 
         # If n_clusters not specified, estimate using spectral clustering
         if self.n_clusters is None:
-            # Simple heuristic for estimating number of clusters
             self.n_clusters = min(
                 max(2, int(np.sqrt(adjacency_matrix.shape[0]))),
-                10  # Cap the number of clusters
+                10
             )
 
         # Ensemble clustering
@@ -146,7 +145,6 @@ class ECGClustering:
             # Get labels for this node across iterations
             node_labels = ensemble_labels[:, node]
 
-            # Use mode (most frequent label)
             unique_labels, counts = np.unique(node_labels, return_counts=True)
             final_labels[node] = unique_labels[np.argmax(counts)]
 
@@ -164,7 +162,6 @@ def calculate_modularity(G, labels):
     Returns:
     - Modularity score
     """
-    # Create communities from labels
     unique_labels = np.unique(labels)
     communities = [
         [node for node, label in zip(G.nodes(), labels) if label == comm_label]
@@ -173,6 +170,42 @@ def calculate_modularity(G, labels):
 
     # Calculate modularity
     return nx_community.modularity(G, communities)
+
+
+def visualize_graph(G, labels, name):
+    """
+    Visualize the graph with nodes colored by community
+    
+    Parameters:
+    - G: NetworkX graph
+    - labels: Cluster labels for nodes
+    - name: Name of the network for the plot title
+    """
+    plt.figure(figsize=(12, 10))
+
+    # Use spring layout for graph positioning
+    pos = nx.spring_layout(G, seed=42)
+
+    # Get unique labels and assign colors
+    unique_labels = np.unique(labels)
+    color_palette = plt.cm.rainbow(np.linspace(0, 1, len(unique_labels)))
+
+    # Color nodes based on their community
+    node_colors = [color_palette[np.where(unique_labels == label)[
+        0][0]] for label in labels]
+
+    # Draw the graph
+    nx.draw_networkx_nodes(G, pos, node_color=node_colors,
+                           node_size=50, alpha=0.8)
+    nx.draw_networkx_edges(G, pos, alpha=0.2, width=0.5)
+
+    plt.title(f"Community Structure - {name.upper()} Network")
+    plt.axis('off')
+
+    # Save the plot
+    plt.tight_layout()
+    plt.savefig(f"{name}_community_graph.png", dpi=300, bbox_inches='tight')
+    plt.close()
 
 
 def process_network(network_path, label_path):
@@ -195,13 +228,12 @@ def process_network(network_path, label_path):
     # Load node labels for ground truth
     node_labels = load_node_labels(label_path)
 
-    # Prepare adjacency matrix
+    # adjacency matrix
     adjacency_matrix = nx.to_numpy_array(G)
 
-    # Measure time and calculate modularity with ECG
     start_time = time.time()
 
-    # Instantiate ECG Clustering
+    # ECG Clustering
     ecg = ECGClustering(n_iterations=10)
 
     # Perform clustering
@@ -212,7 +244,6 @@ def process_network(network_path, label_path):
 
     end_time = time.time()
 
-    # Prepare results
     results = {
         'Network': network_path.split('/')[-1],
         'Nodes': G.number_of_nodes(),
@@ -221,30 +252,27 @@ def process_network(network_path, label_path):
         'Computation Time (s)': end_time - start_time
     }
 
+    # Visualize the graph
+    visualize_graph(G, predicted_labels, network_path.split('/')[-1])
+
     return results
 
 
-# Define dataset paths
 datasets = {
     "citeseer": "./dataset/real-node-label/citeseer/citeseer.cites",
     "cora": "./dataset/real-node-label/cora/cora.cites",
-    "pubmed": "./dataset/real-node-label/pubmed/Pubmed-Diabetes.DIRECTED.cites.tab"
 }
 
 label_paths = {
     "citeseer": "./dataset/real-node-label/citeseer/ind.citeseer.y",
     "cora": "./dataset/real-node-label/cora/ind.cora.y",
-    "pubmed": "./dataset/real-node-label/pubmed/ind.pubmed.y"
 }
 
-# Process all networks
 all_results = []
 for name, network_path in datasets.items():
     try:
-        # Get corresponding label path
         label_path = label_paths[name]
 
-        # Process network
         result = process_network(network_path, label_path)
 
         if result:
@@ -254,12 +282,6 @@ for name, network_path in datasets.items():
             all_results.append(result)
     except Exception as e:
         print(f"Error processing {name}: {e}")
-
-# Print summary table
-print("\n--- SUMMARY TABLE ---")
-print("{:<10} {:<6} {:<6} {:<12} {:<12}".format(
-    "Network", "Nodes", "Edges", "Modularity", "Computation Time"))
-print("-" * 50)
 
 for result in all_results:
     print("{:<10} {:<6} {:<6} {:<12.4f} {:<12.4f}".format(
